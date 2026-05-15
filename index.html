@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>King Phomphakdy — Village Portfolio</title>
+  <meta name="description" content="An interactive village portfolio by Oudomsak King Phomphakdy. Walk around to explore projects, background, and contact info." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="boot" class="boot">
+    <div class="boot__inner">
+      <h1 class="boot__title">████ KING ████</h1>
+      <p class="boot__sub">&gt;&gt; builds things &lt;&lt;</p>
+      <p class="boot__hint">use <kbd>WASD</kbd> or <kbd>arrows</kbd> to move · <kbd>E</kbd> to interact</p>
+      <button id="start-btn" class="boot__btn" type="button">Enter the village</button>
+      <a id="skip-link" class="boot__skip" href="#resume">skip → résumé view</a>
+    </div>
+  </div>
+
+  <main id="game" class="game" hidden>
+    <canvas id="canvas" width="960" height="540" aria-label="Top-down village portfolio. Use WASD or arrow keys to move your character.">
+      Your browser does not support the HTML canvas element. <a href="#resume">View the résumé version instead.</a>
+    </canvas>
+    <div id="hud" class="hud">
+      <div id="prompt" class="hud__prompt" hidden></div>
+      <a class="hud__escape" href="#resume" title="Switch to plain résumé view">résumé view ↗</a>
+    </div>
+    <div id="dialogue" class="dialogue" hidden aria-live="polite">
+      <div class="dialogue__panel">
+        <header class="dialogue__header">
+          <h2 id="dialogue-title" class="dialogue__title"></h2>
+          <button id="dialogue-close" class="dialogue__close" type="button" aria-label="Close">×</button>
+        </header>
+        <div id="dialogue-body" class="dialogue__body"></div>
+        <footer class="dialogue__footer">
+          <span class="dialogue__hint">press <kbd>Esc</kbd> or <kbd>E</kbd> to close</span>
+        </footer>
+      </div>
+    </div>
+  </main>
+
+  <section id="resume" class="resume" aria-label="Plain résumé view">
+    <div class="resume__inner">
+      <a class="resume__back" href="#">← back to the village</a>
+      <h1>Oudomsak King Phomphakdy</h1>
+      <p class="resume__tag">Analyst · Builder · Merced, CA</p>
+
+      <h2>Current role</h2>
+      <p>Secretary II to the Executive Director & Interim Staff Services Analyst — Merced County Department of Workforce Investment. Board administration, data analysis, workforce development initiatives, facility operations, event logistics.</p>
+
+      <h2>Selected work</h2>
+      <ul>
+        <li><strong>Job Quality Index</strong> — Internal tool ranking local occupations using weighted metrics.</li>
+        <li><strong>World Agri-Tech Tour</strong> — Coordinated logistics and partner outreach.</li>
+        <li><strong>MindMeld</strong> — Full-stack flashcard app (Claude API, active recall, gamified economy).</li>
+        <li><strong>Automated Options Trading Bot</strong> — Alpaca API, DCA Martingale strategy, ChatGPT sentiment integration.</li>
+      </ul>
+
+      <h2>Background</h2>
+      <p>BA Psychology, CSU Stanislaus. Pursuing MA in General Psychology (neurocognitive architecture) → PhD in Quantitative Psychology at UC Merced.</p>
+
+      <h2>Tech</h2>
+      <p>Python · SQL · Full-stack web · LLM API integration · Microsoft Suite</p>
+
+      <h2>Contact</h2>
+      <p>GitHub: <a href="https://github.com/draquiem" target="_blank" rel="noopener">github.com/draquiem</a></p>
+    </div>
+  </section>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

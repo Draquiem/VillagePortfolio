@@ -5,7 +5,9 @@ import { tiles, MAP_W, MAP_H, mapPixelBounds } from "./world/map.js";
 import { TILE, drawTile } from "./world/tiles.js";
 import { createPlayer } from "./entities/player.js";
 import { createBuilding } from "./entities/interactable.js";
+import { createProp } from "./entities/prop.js";
 import { BUILDINGS } from "./content/buildings.js";
+import { PROPS } from "./content/props.js";
 import * as Dialogue from "./ui/dialogue.js";
 import * as Prompt from "./ui/prompt.js";
 
@@ -19,8 +21,10 @@ const game = document.getElementById("game");
 
 const camera = createCamera(canvas.width, canvas.height);
 const buildings = BUILDINGS.map(createBuilding);
+const props = PROPS.map(createProp);
+const solids = [...buildings, ...props];
 
-// Spawn player at center of map, on the path
+// Spawn player at center of map, in the plaza
 const player = createPlayer(14 * TILE, 10 * TILE);
 
 let nearby = null;
@@ -34,7 +38,7 @@ function update(dt) {
     return;
   }
 
-  player.update(dt, input, buildings, mapPixelBounds);
+  player.update(dt, input, solids, mapPixelBounds);
   camera.follow(player, mapPixelBounds);
 
   // find nearest interactable
@@ -70,8 +74,8 @@ function render() {
     }
   }
 
-  // sort buildings + player by feet-y for fake depth
-  const drawables = [...buildings, player].sort((a, b) => (a.y + a.h) - (b.y + b.h));
+  // sort buildings + props + player by feet-y for fake depth
+  const drawables = [...buildings, ...props, player].sort((a, b) => (a.y + a.h) - (b.y + b.h));
   for (const d of drawables) d.render(ctx, camera);
 }
 

@@ -40,10 +40,10 @@ export const input = {
   },
   axis() {
     let x = 0, y = 0;
-    if (held.has("left")) x -= 1;
-    if (held.has("right")) x += 1;
-    if (held.has("up")) y -= 1;
-    if (held.has("down")) y += 1;
+    if (held.has("left")) x -= 3;
+    if (held.has("right")) x += 3;
+    if (held.has("up")) y -= 3;
+    if (held.has("down")) y += 3;
     return { x, y };
   },
 };

@@ -10,6 +10,6 @@ export function createCamera(viewW, viewH) {
       this.y = target.y + target.h / 2 - viewH / 2;
       this.x = Math.max(0, Math.min(this.x, bounds.w - viewW));
       this.y = Math.max(0, Math.min(this.y, bounds.h - viewH));
-    },
+    }
   };
 }

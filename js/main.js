@@ -2,6 +2,7 @@ import { start } from "./engine/loop.js";
 import { input } from "./engine/input.js";
 import { createCamera } from "./engine/camera.js";
 import { tiles, MAP_W, MAP_H, mapPixelBounds } from "./world/map.js";
+import { markSolid, markSolidRect } from "./world/collision.js";
 import { TILE, drawTile } from "./world/tiles.js";
 import { createPlayer } from "./entities/player.js";
 import { createBuilding } from "./entities/interactable.js";
@@ -22,10 +23,13 @@ const game = document.getElementById("game");
 const camera = createCamera(canvas.width, canvas.height);
 const buildings = BUILDINGS.map(createBuilding);
 const props = PROPS.map(createProp);
-const solids = [...buildings, ...props];
 
-// Spawn player at center of map, in the plaza
-const player = createPlayer(14 * TILE, 10 * TILE);
+// Stamp building footprints and prop bases into the tile-walkability grid
+for (const b of buildings) markSolidRect(b.footprint.tx, b.footprint.ty, b.footprint.w, b.footprint.h);
+for (const p of props) markSolid(p.tx, p.ty);
+
+// Spawn player on the plaza (tile coords), facing down
+const player = createPlayer(14, 10);
 
 let nearby = null;
 let started = false;
@@ -38,7 +42,7 @@ function update(dt) {
     return;
   }
 
-  player.update(dt, input, solids, mapPixelBounds);
+  player.update(dt, input);
   camera.follow(player, mapPixelBounds);
 
   // find nearest interactable

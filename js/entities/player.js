@@ -1,82 +1,128 @@
 import { loadImage, drawSpriteOrPlaceholder } from "../engine/assets.js";
-import { isWaterAt } from "../world/map.js";
+import { TILE } from "../world/tiles.js";
+import { isWalkable } from "../world/collision.js";
 
-const SPEED = 130; // px/sec
-const W = 24;
-const H = 28;
+// Grid-locked, Gen-IV-Pokémon-style movement: the player snaps to the tile grid
+// and glides one tile per step. Tap a direction to turn in place; hold to walk.
+// No diagonals. Walkability is read from world/collision.js.
 
-const sprites = {
-  down: null, up: null, left: null, right: null,
+const STEP_DURATION = 0.18; // seconds to glide across one tile
+const TURN_DELAY = 0.06;    // tap-to-turn window before a step commits
+
+// Drawn sprite size (feet-anchored inside the TILE-wide cell). Can grow taller
+// than TILE for a head that overhangs the tile above — the renderer anchors feet.
+const DRAW_W = 48;
+const DRAW_H = 64;
+
+const DIRS = {
+  up:    { dx: 0,  dy: -1 },
+  down:  { dx: 0,  dy: 1 },
+  left:  { dx: -1, dy: 0 },
+  right: { dx: 1,  dy: 0 },
 };
+const ROW = { down: 0, left: 1, right: 2, up: 3 };
 
+// Optional walk-cycle sheet: rows [down, left, right, up] × cols [stand, stepA,
+// stepB]. If absent we fall back to the four static per-direction PNGs, and if
+// those are missing too, to a labeled placeholder — the game always runs.
+const SHEET_COLS = 3;
+const SHEET_ROWS = 4;
+
+let sheet = null;
+const statics = { down: null, up: null, left: null, right: null };
+(async () => { sheet = await loadImage("assets/sprites/player.png"); })();
 (async () => {
-  sprites.down  = await loadImage("assets/sprites/player_down.png");
-  sprites.up    = await loadImage("assets/sprites/player_up.png");
-  sprites.left  = await loadImage("assets/sprites/player_left.png");
-  sprites.right = await loadImage("assets/sprites/player_right.png");
+  statics.down  = await loadImage("assets/sprites/player_down.png");
+  statics.up    = await loadImage("assets/sprites/player_up.png");
+  statics.left  = await loadImage("assets/sprites/player_left.png");
+  statics.right = await loadImage("assets/sprites/player_right.png");
 })();
 
-export function createPlayer(x, y) {
+export function createPlayer(tileX, tileY) {
   return {
-    x, y, w: W, h: H,
-    vx: 0, vy: 0,
+    tileX, tileY,
+    x: tileX * TILE, y: tileY * TILE, // interpolated top-left of the cell (px)
+    w: TILE, h: TILE,                 // footprint = one tile (for camera + depth sort)
     facing: "down",
+    moving: false,
+    progress: 0,
+    fromX: tileX, fromY: tileY,
+    toX: tileX, toY: tileY,
+    turnTimer: 0,
+    stepParity: 0,
 
-    update(dt, input, solids, bounds) {
-      const a = input.axis();
-      // normalize diagonal speed
-      let dx = a.x, dy = a.y;
-      const m = Math.hypot(dx, dy);
-      if (m > 0) { dx /= m; dy /= m; }
-      this.vx = dx * SPEED;
-      this.vy = dy * SPEED;
-
-      if (Math.abs(a.x) > Math.abs(a.y)) {
-        this.facing = a.x < 0 ? "left" : a.x > 0 ? "right" : this.facing;
-      } else if (a.y !== 0) {
-        this.facing = a.y < 0 ? "up" : "down";
+    update(dt, input) {
+      if (this.moving) {
+        this.progress += dt / STEP_DURATION;
+        if (this.progress < 1) {
+          this._lerp();
+          return;
+        }
+        // arrived — snap, then fall through to maybe chain another step this frame
+        this.tileX = this.toX;
+        this.tileY = this.toY;
+        this.x = this.tileX * TILE;
+        this.y = this.tileY * TILE;
+        this.moving = false;
+        this.progress = 0;
       }
 
-      // separated-axis movement against solids + water + map bounds
-      const stepX = this.vx * dt;
-      if (stepX !== 0) {
-        const nx = this.x + stepX;
-        if (!this._collides(nx, this.y, solids, bounds)) this.x = nx;
+      const dir = input.dir();
+      if (!dir) { this.turnTimer = 0; return; }
+
+      if (dir !== this.facing) {
+        // tap-to-turn: face it, brief pause before a step commits
+        this.facing = dir;
+        this.turnTimer = TURN_DELAY;
+        return;
       }
-      const stepY = this.vy * dt;
-      if (stepY !== 0) {
-        const ny = this.y + stepY;
-        if (!this._collides(this.x, ny, solids, bounds)) this.y = ny;
+      if (this.turnTimer > 0) { this.turnTimer -= dt; return; }
+
+      // try to step forward; if blocked, bump (stay put, keep facing)
+      const d = DIRS[this.facing];
+      const nx = this.tileX + d.dx;
+      const ny = this.tileY + d.dy;
+      if (isWalkable(nx, ny)) {
+        this.moving = true;
+        this.fromX = this.tileX; this.fromY = this.tileY;
+        this.toX = nx; this.toY = ny;
+        this.progress = 0;
+        this.stepParity ^= 1;
       }
     },
 
-    _collides(x, y, solids, bounds) {
-      if (x < 0 || y < 0 || x + this.w > bounds.w || y + this.h > bounds.h) return true;
-      // water check at the four corners of the hitbox
-      if (isWaterAt(x + 2, y + this.h - 2)) return true;
-      if (isWaterAt(x + this.w - 2, y + this.h - 2)) return true;
-      if (isWaterAt(x + 2, y + this.h / 2)) return true;
-      if (isWaterAt(x + this.w - 2, y + this.h / 2)) return true;
-      for (const s of solids) {
-        if (x < s.x + s.w && x + this.w > s.x && y < s.y + s.h && y + this.h > s.y) return true;
-      }
-      return false;
+    _lerp() {
+      const t = this.progress;
+      this.x = (this.fromX + (this.toX - this.fromX) * t) * TILE;
+      this.y = (this.fromY + (this.toY - this.fromY) * t) * TILE;
     },
 
     render(ctx, camera) {
-      const sx = Math.round(this.x - camera.x);
-      const sy = Math.round(this.y - camera.y);
-      // soft shadow
+      const cellX = Math.round(this.x - camera.x);
+      const cellY = Math.round(this.y - camera.y);
+      const dx = cellX + (TILE - DRAW_W) / 2;
+      const dy = cellY + TILE - DRAW_H;
+
+      // soft shadow at the feet
       ctx.fillStyle = "rgba(0,0,0,0.25)";
       ctx.beginPath();
-      ctx.ellipse(sx + this.w / 2, sy + this.h - 1, this.w / 2.2, 4, 0, 0, Math.PI * 2);
+      ctx.ellipse(cellX + TILE / 2, cellY + TILE - 6, DRAW_W / 2.4, 6, 0, 0, Math.PI * 2);
       ctx.fill();
-      drawSpriteOrPlaceholder(ctx, sprites[this.facing], sx, sy, this.w, this.h, "P", "#e53170");
+
+      if (sheet) {
+        const fw = sheet.width / SHEET_COLS;
+        const fh = sheet.height / SHEET_ROWS;
+        // walk: step frame for the first half of a tile, stand for the second
+        const col = this.moving ? (this.progress < 0.5 ? 1 + this.stepParity : 0) : 0;
+        ctx.drawImage(sheet, col * fw, ROW[this.facing] * fh, fw, fh, dx, dy, DRAW_W, DRAW_H);
+        return;
+      }
+      drawSpriteOrPlaceholder(ctx, statics[this.facing], dx, dy, DRAW_W, DRAW_H, "P", "#e53170");
     },
 
-    // useful for prompt positioning
+    // used to position the "Press E" prompt above the player's head
     centerScreen(camera) {
-      return { x: this.x - camera.x + this.w / 2, y: this.y - camera.y };
+      return { x: this.x - camera.x + TILE / 2, y: this.y - camera.y + (TILE - DRAW_H) };
     },
   };
 }

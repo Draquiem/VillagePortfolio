@@ -1,6 +1,9 @@
 // Keyboard state. `held` reflects current state. `consumePressed(key)` is one-shot.
 const held = new Set();
 const pressedQueue = new Set();
+// currently-held directions in press order (most recent last) — drives grid movement
+const DIR_KEYS = ["up", "down", "left", "right"];
+const dirOrder = [];
 
 const ALIASES = {
   ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
@@ -24,13 +27,17 @@ window.addEventListener("keydown", (e) => {
   }
   if (!held.has(k)) pressedQueue.add(k);
   held.add(k);
+  if (DIR_KEYS.includes(k) && !dirOrder.includes(k)) dirOrder.push(k);
 });
 
 window.addEventListener("keyup", (e) => {
-  held.delete(normalize(e.key));
+  const k = normalize(e.key);
+  held.delete(k);
+  const i = dirOrder.indexOf(k);
+  if (i >= 0) dirOrder.splice(i, 1);
 });
 
-window.addEventListener("blur", () => held.clear());
+window.addEventListener("blur", () => { held.clear(); dirOrder.length = 0; });
 
 export const input = {
   isDown(key) { return held.has(key); },
@@ -45,5 +52,9 @@ export const input = {
     if (held.has("up")) y -= 3;
     if (held.has("down")) y += 3;
     return { x, y };
+  },
+  // most-recently-pressed direction still held (4-dir), or null
+  dir() {
+    return dirOrder.length ? dirOrder[dirOrder.length - 1] : null;
   },
 };

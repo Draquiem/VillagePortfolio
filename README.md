@@ -17,8 +17,8 @@ Opening `index.html` directly via `file://` won't work — ES modules require an
 
 ## Controls
 
-- **WASD** or **arrow keys** — move
-- **E** — interact (open the nearest building)
+- **WASD** or **arrow keys** — move (grid-locked, one tile per step; tap to turn, hold to walk)
+- **E** — interact (stand in front of a building's door, face it, and press)
 - **Esc** or **E** — close a dialogue
 - Click **"résumé view ↗"** in the corner for a plain text version
 

@@ -21,35 +21,39 @@ Two solid defaults:
 
 Discipline beats variety. A scene drawn from 16 colors will look more "real" than one drawn from 256.
 
-## 3. Size decision — current vs strict 8-bit
+## 3. Size reference — 64-px world
 
-The scaffold ships with these sizes:
+The world runs on a **64×64 base tile**, modeled on the Nintendo DS Pokémon games
+(Diamond/Pearl/Platinum). Draw at these exact sizes — 4× the pixels of the old 32-px
+scaffold, so there's room for real detail:
 
-| Asset | Current | Strict 8-bit (NES-era) |
+| Asset | Size | Notes |
 |---|---|---|
-| Tile | 32×32 | 16×16 |
-| Player | 24×28 | 16×16 |
-| Building | 96×64 (3×2 tiles) | 48×32 (3×2 tiles) |
+| Tile | 64×64 | one grid cell |
+| Player | 48×64 | feet-anchored; can overhang taller if you want a bigger head |
+| Building | 192×128 | 3×2 tiles |
+| Garden | 256×128 | 4×2 tiles |
 
-**Current sizes** = "modern pixel art" (Stardew Valley territory). Easier to draw recognizable detail.
+These are "modern pixel art" proportions (Stardew / DS-Pokémon territory) — easy to draw
+recognizable faces, signs, and texture.
 
-**Strict 8-bit** = chunkier, more authentic, harder to draw faces or text but more unmistakably retro.
-
-If you want to switch to strict 8-bit, the engine constants live in:
+Engine constants, if you ever want to rescale again:
 
 - `js/world/tiles.js` → `TILE`
-- `js/entities/player.js` → `W`, `H`
+- `js/entities/player.js` → `DRAW_W`, `DRAW_H`, plus `STEP_DURATION` / `TURN_DELAY` (walk feel)
 - `js/content/buildings.js` → each building's `w`, `h` (in multiples of `TILE`)
+- `index.html` → canvas `width`/`height` (controls how many tiles are visible on screen)
 
 ## 4. Drawing order — for fastest visible payoff
 
 Don't try to draw everything at once. Go in this order:
 
-1. **`player_down.png`** — one sprite, immediate gratification. Reload and the pink rectangle is gone. Confirms the fallback → real-art swap is working.
+1. **`player_down.png`** (48×64) — one sprite, immediate gratification. Reload and the pink rectangle is gone. Confirms the fallback → real-art swap is working.
 2. **Other three player facings** (`up`, `left`, `right`). Left/right are mirrored, so it's really only one new drawing.
-3. **One building** (`building_home.png`). Now you can see how player + building read together visually.
-4. **The remaining four buildings.**
-5. **Tiles last** — grass, path, water, flower variants. These are subtle; do them once your palette and style are locked in from the sprites.
+3. **`player.png` walk sheet** — once the four facings look right, combine them into the 3×4 animated sheet (see `assets/sprites/README.md`) to get the Pokémon walk cycle. The sheet takes priority over the static PNGs.
+4. **One building** (`building_home.png`). Now you can see how player + building read together visually.
+5. **The remaining four buildings.**
+6. **Tiles last** — grass, path, water, flower variants. These are subtle; do them once your palette and style are locked in from the sprites.
 
 ## 5. Export rules
 
@@ -67,11 +71,14 @@ Keep two windows open side by side:
 
 Save the PNG → <kbd>Ctrl+Shift+R</kbd> in the browser → see it. Tight feedback loop is the whole point.
 
-## 7. Animation (later, not v0)
+## 7. Animation (already supported)
 
-The engine currently loads one static image per direction. When you want walk-cycle animations, that requires:
+The engine **already** does walk-cycle animation — you just need to supply the art. Drop a
+`player.png` sheet laid out as **3 columns (stand / step A / step B) × 4 rows (down, left,
+right, up)** and the player animates while walking and stands still when idle. Full spec and
+an ASCII layout are in `assets/sprites/README.md`.
 
-- A horizontal sprite-sheet strip per direction (e.g., 4 frames of 24×28 = 96×28 image).
-- A small update to `js/engine/assets.js` and `js/entities/player.js` to track frame index and slice from the sheet.
-
-Don't worry about this until you have all the static art. Walking animations are a polish pass, not a blocker.
+No code changes needed. If `player.png` is absent the engine falls back to the four static
+facings, and if those are missing too, to the placeholder rectangle — so the game always runs.
+Treat the sheet as a polish pass: get the four static facings looking right first, then combine
+them into the sheet.

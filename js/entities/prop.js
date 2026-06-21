@@ -77,23 +77,33 @@ const DEFS = {
   },
 };
 
+// The prop art in DEFS is authored in a 32-unit space; S scales it (and the
+// prop's footprint) up to the real TILE size.
+const S = TILE / 32;
+
 export function createProp({ type, tx, ty }) {
   const def = DEFS[type];
   if (!def) throw new Error(`Unknown prop type: ${type}`);
-  const x = tx * TILE + Math.round((TILE - def.w) / 2);
-  const y = (ty + 1) * TILE - def.h;
+  const w = def.w * S;
+  const h = def.h * S;
+  const x = tx * TILE + Math.round((TILE - w) / 2);
+  const y = (ty + 1) * TILE - h;
   return {
-    type, x, y,
-    w: def.w, h: def.h,
+    type, tx, ty, x, y, w, h,
     render(ctx, camera) {
       const sx = Math.round(this.x - camera.x);
       const sy = Math.round(this.y - camera.y);
       // shadow under the base
       ctx.fillStyle = "rgba(0,0,0,0.22)";
       ctx.beginPath();
-      ctx.ellipse(sx + this.w / 2, sy + this.h, this.w / 2, 3, 0, 0, Math.PI * 2);
+      ctx.ellipse(sx + this.w / 2, sy + this.h, this.w / 2, 3 * S, 0, 0, Math.PI * 2);
       ctx.fill();
-      def.render(ctx, sx, sy);
+      // draw the 32-unit art scaled up to the real prop size
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.scale(S, S);
+      def.render(ctx, 0, 0);
+      ctx.restore();
     },
   };
 }

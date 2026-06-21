@@ -2,7 +2,7 @@
 // Tile legend:
 //   0 grass · 1 grass_dark · 2 path · 3 water · 4 flower
 //   5 sand  · 6 stone      · 7 bridge
-import { TILE, T } from "./tiles.js";
+import { TILE } from "./tiles.js";
 
 // prettier-ignore
 const RAW = [
@@ -37,10 +37,3 @@ export const mapPixelBounds = {
   w: MAP_W * TILE,
   h: MAP_H * TILE,
 };
-
-export function isWaterAt(px, py) {
-  const tx = Math.floor(px / TILE);
-  const ty = Math.floor(py / TILE);
-  if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) return true;
-  return tiles[ty][tx] === T.WATER;
-}

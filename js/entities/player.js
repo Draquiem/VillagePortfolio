@@ -1,10 +1,9 @@
 import { loadImage, drawSpriteOrPlaceholder } from "../engine/assets.js";
 import { TILE } from "../world/tiles.js";
-import { isWalkable } from "../world/collision.js";
 
 // Grid-locked, Gen-IV-Pokémon-style movement: the player snaps to the tile grid
 // and glides one tile per step. Tap a direction to turn in place; hold to walk.
-// No diagonals. Walkability is read from world/collision.js.
+// No diagonals. Walkability comes from the active scene (passed into update).
 
 const STEP_DURATION = 0.18; // seconds to glide across one tile
 const TURN_DELAY = 0.06;    // tap-to-turn window before a step commits
@@ -51,7 +50,19 @@ export function createPlayer(tileX, tileY) {
     turnTimer: 0,
     stepParity: 0,
 
-    update(dt, input) {
+    // Teleport onto a tile (used by the scene manager on every scene load).
+    placeAt(tx, ty, facing = "down") {
+      this.tileX = tx; this.tileY = ty;
+      this.x = tx * TILE; this.y = ty * TILE;
+      this.fromX = tx; this.fromY = ty;
+      this.toX = tx; this.toY = ty;
+      this.facing = facing;
+      this.moving = false;
+      this.progress = 0;
+      this.turnTimer = 0;
+    },
+
+    update(dt, input, scene) {
       if (this.moving) {
         this.progress += dt / STEP_DURATION;
         if (this.progress < 1) {
@@ -82,7 +93,7 @@ export function createPlayer(tileX, tileY) {
       const d = DIRS[this.facing];
       const nx = this.tileX + d.dx;
       const ny = this.tileY + d.dy;
-      if (isWalkable(nx, ny)) {
+      if (scene.isWalkable(nx, ny)) {
         this.moving = true;
         this.fromX = this.tileX; this.fromY = this.tileY;
         this.toX = nx; this.toY = ny;

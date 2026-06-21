@@ -1,6 +1,6 @@
 # VillagePortfolio
 
-An interactive top-down village that doubles as a personal portfolio. Walk a character around with WASD/arrow keys and press <kbd>E</kbd> to enter buildings — each one reveals a different slice of who I am (about, projects, background, contact).
+An interactive top-down village that doubles as a personal portfolio. Walk a character around with WASD/arrow keys and press <kbd>E</kbd> to step inside buildings — each interior holds objects and people you can examine for a different slice of who I am (about, projects, background, contact), plus a few familiar faces hidden around town.
 
 Built with vanilla HTML, CSS, and JavaScript. No build step, no dependencies. Hosted on GitHub Pages.
 
@@ -18,7 +18,8 @@ Opening `index.html` directly via `file://` won't work — ES modules require an
 ## Controls
 
 - **WASD** or **arrow keys** — move (grid-locked, one tile per step; tap to turn, hold to walk)
-- **E** — interact (stand in front of a building's door, face it, and press)
+- **E** — enter a building (face its door), or examine an object / talk to a villager (face it)
+- Walk onto the **EXIT** mat to leave a building
 - **Esc** or **E** — close a dialogue
 - Click **"résumé view ↗"** in the corner for a plain text version
 
@@ -34,4 +35,4 @@ The game ships with colored-rectangle placeholders so it runs from day one. Drop
 
 ## Editing content
 
-All portfolio content lives in [`js/content/buildings.js`](js/content/buildings.js). Each building has a `content` block — edit the strings, add/remove buildings, change positions.
+The entire world — maps, buildings, objects, and NPCs — lives in [`js/content/scenes.js`](js/content/scenes.js). Each object/NPC has a `content` block; edit the strings, add/remove items, or reshape the maps. The five marquee assets (the home photo wall, workshop workstation, library records, post-office mailbox, garden notice board) carry the real bio; the rest are placeholders to fill in.
